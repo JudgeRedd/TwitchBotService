@@ -16,7 +16,13 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
     <PackageReference Include="TwitchLib.Client" Version="3.2.6-preview-efac467b4b08e2ed974742f775517361850ffe33" />
     <PackageReference Include="TwitchLib.Communication" Version="1.0.4" />
-    <PackageReference Include="TwitchLib.PubSub" Version="3.2.5-preview-e27b78571148879a04eaea2cf45441a35b0e908f" />
+    <!-- <PackageReference Include="TwitchLib.PubSub" Version="3.2.5-preview-e27b78571148879a04eaea2cf45441a35b0e908f" />
+    <PackageReference Include="Websocket.Client" Version="4.4.43" />
+    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" /> -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include=".\appsettings.json" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

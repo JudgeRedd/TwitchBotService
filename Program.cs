@@ -2,11 +2,11 @@
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
-        var emotes = new sevenTv();
+        Bot bot = new Bot();
+        await bot.Run();
 
-        Bot bot = new Bot(emotes.EmoteList);
-        Console.ReadLine();
+        await Task.Delay(-1);
     }
 }

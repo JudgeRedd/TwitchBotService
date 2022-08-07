@@ -6,40 +6,86 @@ namespace TwitchChatBot
     internal class sevenTv
     {
         public Dictionary<string, string> EmoteDictionary;
-        public List<string> EmoteList;
-        
+        public IEnumerable<string> EmoteList;
+        HttpResponseMessage? response;
+        string? result;
+        List<Emotes>? emotes;
+        HttpClient client;
+        Settings? _settings;
+
         public sevenTv()
         {
-            getEmotes();
+            _settings = new configuration().settings;
+            client = new HttpClient();
         }
 
-        private void getEmotes()
+        public async Task Setup()
         {
-            var _settings = new configuration().settings;
+            response = client.GetAsync(_settings.SevenTvAPIURL).Result;
+            result = response.Content.ReadAsStringAsync().Result;
+            emotes = JsonConvert.DeserializeObject<List<Emotes>>(result);
+        }
 
-            HttpClient client = new HttpClient();
+        public async Task Refresh(TriggerType triggerType) 
+        {
+            await Setup();
 
-            var response = client.GetAsync(_settings.SevenTvAPIURL).Result;
+            while(emotes.Count() == 0)
+            {
+                for(int retry = 0; retry <= 3; retry++)
+                {
+                    await Task.Delay(5000);
+                    await Setup();
+                    if(emotes.Count() > 0)
+                        break;
 
-            var result = response.Content.ReadAsStringAsync().Result;
+                    Console.WriteLine("No emotes found, retrying in 5 seconds");
+                }
+            }
 
-            var json = JsonConvert.DeserializeObject<List<Emotes>>(result);
-
-            EmoteList = json.Select(x => x.Name).ToList();
-            EmoteDictionary = json.ToDictionary(x => x.Name, x => x.Urls[3][1]);
+            EmoteList = emotes.Select(x => x.Name);
+            EmoteDictionary = emotes.ToDictionary(x => x.Name, x => x.Urls[3][1]);
 
             var db = new database();
-            db.checkExist(EmoteDictionary);
+
+            if(triggerType == TriggerType.Startup)
+            {
+                if(await db.CountNewEmotes(emotes) > 0)
+                {
+                    await db.AddNewEmotes(EmoteDictionary);
+                }
+            }
+
+            if(triggerType == TriggerType.ModTriggered)
+            {
+                for(var retry = 0; retry < 5; retry++)
+                {
+                    await Task.Delay(10000);
+                    await Setup();
+                    if(await db.CountNewEmotes(emotes) > 0)
+                        break;
+                    
+                    Console.WriteLine("API not updated yet, retrying in 10 seconds");
+                    
+                }
+                
+                await db.AddNewEmotes(EmoteDictionary);
+            }
 
         }
 
-        private struct EmoteSum
+        private struct EmoteTotals
         {
             public int id { get; set; }
-            public string emote_name { get; set; }
+            public string name { get; set; }
             public int count { get; set; }
-            public string emote_url { get; set; }
-            
+            public string url { get; set; }
+        }
+
+        public enum TriggerType 
+        {
+            Startup, 
+            ModTriggered
         }
 
     }
